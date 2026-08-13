@@ -449,15 +449,6 @@ public class SandboxTerminalService : ISandboxTerminalService
                 systemInfo.AvailableMemoryMB = -1; // 无法获取 - Unable to get
             }
 
-            // 获取环境变量 - Get environment variables
-            foreach (DictionaryEntry envVar in Environment.GetEnvironmentVariables())
-            {
-                if (envVar.Key != null && envVar.Value != null)
-                {
-                    systemInfo.EnvironmentVariables[envVar.Key.ToString()!] = envVar.Value.ToString()!;
-                }
-            }
-
             return await Task.FromResult(systemInfo);
         }
         catch (Exception ex)

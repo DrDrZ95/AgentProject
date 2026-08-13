@@ -17,8 +17,13 @@ public static class IdentityExtensions
     {
         // Add PostgreSQL DbContext
         // 添加PostgreSQL数据库上下文
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? "Host=localhost;Database=Agent.ApiDb;Username=postgres;Password=postgres";
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "ConnectionStrings:DefaultConnection must be configured. " +
+                "Use user secrets or the ConnectionStrings__DefaultConnection environment variable.");
+        }
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -75,9 +80,20 @@ public static class IdentityExtensions
         // Add JWT Bearer authentication
         // 添加JWT Bearer认证
         var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!";
+        var secretKey = jwtSettings["SecretKey"];
+        if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32)
+        {
+            throw new InvalidOperationException(
+                "JwtSettings:SecretKey must be configured with at least 32 bytes. " +
+                "Use user secrets or the JwtSettings__SecretKey environment variable.");
+        }
+
         var issuer = jwtSettings["Issuer"] ?? "Agent.Api";
         var audience = jwtSettings["Audience"] ?? "Agent.ApiUsers";
+        var isDevelopment = string.Equals(
+            configuration["ASPNETCORE_ENVIRONMENT"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+            Environments.Development,
+            StringComparison.OrdinalIgnoreCase);
 
         services.AddAuthentication(options =>
         {
@@ -88,7 +104,7 @@ public static class IdentityExtensions
         .AddJwtBearer(options =>
         {
             options.SaveToken = true;
-            options.RequireHttpsMetadata = false; // Set to true in production
+            options.RequireHttpsMetadata = !isDevelopment;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -225,7 +241,8 @@ public static class IdentityExtensions
 
                 // Seed default admin user if not exists
                 // 如果不存在，则播种默认管理员用户
-                await SeedDefaultAdminUserAsync(userManager, roleManager, logger);
+                var configuration = services.GetRequiredService<IConfiguration>();
+                await SeedDefaultAdminUserAsync(userManager, roleManager, configuration, logger);
 
                 logger.LogInformation("Identity database initialized successfully");
             }
@@ -247,10 +264,24 @@ public static class IdentityExtensions
     private static async Task SeedDefaultAdminUserAsync(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
+        IConfiguration configuration,
         ILogger logger)
     {
-        const string adminEmail = "admin@agentwebapi.com";
-        const string adminPassword = "Admin123!";
+        if (!configuration.GetValue("Identity:SeedAdmin:Enabled", false))
+        {
+            logger.LogInformation("Default administrator seeding is disabled");
+            return;
+        }
+
+        var adminEmail = configuration["Identity:SeedAdmin:Email"];
+        var adminPassword = configuration["Identity:SeedAdmin:Password"];
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        {
+            logger.LogError(
+                "Administrator seeding is enabled, but Identity:SeedAdmin:Email or Identity:SeedAdmin:Password is missing");
+            return;
+        }
+
         const string adminRole = "Administrator";
 
         // Check if admin user already exists

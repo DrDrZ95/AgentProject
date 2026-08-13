@@ -14,6 +14,7 @@ namespace Agent.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
+[RequirePermission("system.admin")]
 public class SandboxTerminalController : ControllerBase
 {
     private readonly ISandboxTerminalService _terminalService;
@@ -49,7 +50,7 @@ public class SandboxTerminalController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Received command execution request: {Command}", request.Command);
+            _logger.LogInformation("Received sandbox command execution request");
 
             // 验证请求 - Validate request
             if (string.IsNullOrWhiteSpace(request.Command))
@@ -68,8 +69,8 @@ public class SandboxTerminalController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute command: {Command}", request.Command);
-            return StatusCode(500, ApiResponse<SandboxCommandResult>.Fail(ex.Message));
+            _logger.LogError(ex, "Failed to execute sandbox command");
+            return StatusCode(500, ApiResponse<SandboxCommandResult>.Fail("Command execution failed"));
         }
     }
 
@@ -98,7 +99,7 @@ public class SandboxTerminalController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Received streaming command request: {Command}", request.Command);
+            _logger.LogInformation("Received streaming sandbox command request");
 
             // 验证请求 - Validate request
             if (string.IsNullOrWhiteSpace(request.Command))
@@ -126,18 +127,18 @@ public class SandboxTerminalController : ControllerBase
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Streaming command was cancelled: {Command}", request.Command);
+            _logger.LogInformation("Streaming sandbox command was cancelled");
             return new EmptyResult();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute streaming command: {Command}", request.Command);
+            _logger.LogError(ex, "Failed to execute streaming sandbox command");
             // If headers are already sent, we can't change status code, so just write error to stream
             if (!Response.HasStarted)
             {
-                return StatusCode(500, ApiResponse<object>.Fail(ex.Message));
+                return StatusCode(500, ApiResponse<object>.Fail("Command execution failed"));
             }
-            await Response.WriteAsync($"Error: {ex.Message}\n");
+            await Response.WriteAsync("Error: command execution failed\n");
             return new EmptyResult();
         }
     }
@@ -167,7 +168,7 @@ public class SandboxTerminalController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get working directory");
-            return StatusCode(500, ApiResponse<WorkingDirectoryResponse>.Fail(ex.Message));
+            return StatusCode(500, ApiResponse<WorkingDirectoryResponse>.Fail("Failed to get working directory"));
         }
     }
 
@@ -214,7 +215,7 @@ public class SandboxTerminalController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to set working directory: {Path}", request.Path);
-            return StatusCode(500, ApiResponse<SetWorkingDirectoryResponse>.Fail(ex.Message));
+            return StatusCode(500, ApiResponse<SetWorkingDirectoryResponse>.Fail("Failed to set working directory"));
         }
     }
 
@@ -255,8 +256,8 @@ public class SandboxTerminalController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check command safety: {Command}", request.Command);
-            return StatusCode(500, ApiResponse<CommandSafetyResponse>.Fail(ex.Message));
+            _logger.LogError(ex, "Failed to check sandbox command safety");
+            return StatusCode(500, ApiResponse<CommandSafetyResponse>.Fail("Failed to check command safety"));
         }
     }
 
@@ -284,7 +285,7 @@ public class SandboxTerminalController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get system information");
-            return StatusCode(500, ApiResponse<SandboxSystemInfo>.Fail(ex.Message));
+            return StatusCode(500, ApiResponse<SandboxSystemInfo>.Fail("Failed to get system information"));
         }
     }
 
@@ -330,7 +331,7 @@ public class SandboxTerminalController : ControllerBase
                 IsHealthy = false,
                 Status = "Unhealthy",
                 LastChecked = DateTime.UtcNow,
-                Details = $"Health check failed: {ex.Message}"
+                Details = "Terminal health check failed"
             }));
         }
     }

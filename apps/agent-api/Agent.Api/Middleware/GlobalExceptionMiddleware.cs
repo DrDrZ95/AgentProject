@@ -17,25 +17,22 @@ public class GlobalExceptionMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // 1. 确保响应体在发生异常时可写且可控
-        var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
         try
         {
             await _next(context);
         }
         catch (Exception ex)
         {
+            if (context.Response.HasStarted)
+            {
+                _logger.LogWarning(ex,
+                    "An unhandled exception occurred after the response started. [TraceId: {TraceId}]",
+                    context.TraceIdentifier);
+                throw;
+            }
+
+            context.Response.Clear();
             await HandleExceptionAsync(context, ex);
-        }
-        finally
-        {
-            // 2. 恢复原始流并复制响应内容
-            responseBody.Seek(0, SeekOrigin.Begin);
-            await responseBody.CopyToAsync(originalBodyStream);
-            context.Response.Body = originalBodyStream;
         }
     }
 
@@ -50,15 +47,11 @@ public class GlobalExceptionMiddleware
 
         // 记录详细日志
         _logger.LogError(exception,
-            "Unhandled exception occurred. [TraceId: {TraceId}] [ErrorCode: {ErrorCode}] [StatusCode: {StatusCode}] [Message: {Message}]",
-            context.TraceIdentifier, errorCode, (int)statusCode, message);
+            "Unhandled exception for {Method} {Path}. [TraceId: {TraceId}] [ErrorCode: {ErrorCode}] [StatusCode: {StatusCode}]",
+            context.Request.Method, context.Request.Path, context.TraceIdentifier, errorCode, (int)statusCode);
 
         // Elastic APM 集成（如果已安装 SDK）
         // Elastic.Apm.Agent.Tracer.CurrentTransaction?.CaptureException(exception);
-
-        // 异步后台收集异常上下文信息（如 UserAgent, RequestPath, UserID 等）
-        // 此处体现了用户要求的 "threads for streaming collection" 思想
-        _ = Task.Run(() => CollectExceptionContextAsync(context, exception));
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
@@ -68,40 +61,15 @@ public class GlobalExceptionMiddleware
             Success = false,
             Message = message,
             ErrorCode = errorCode,
-            Data = exception is AggregateException ae ? ae.Flatten().Message : exception.Message
+            RequestId = context.TraceIdentifier
         };
 
         // 如果是开发环境，可以返回更详细的堆栈信息
         // if (env.IsDevelopment()) { ... }
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-    }
-
-    private async Task CollectExceptionContextAsync(HttpContext context, Exception ex)
-    {
-        try
-        {
-            // 这里可以实现更复杂的流式收集逻辑，发送到 Kafka/Elastic/ClickHouse
-            // 目前仅作为占位符，模拟后台线程处理
-            var contextInfo = new
-            {
-                Timestamp = DateTime.UtcNow,
-                Path = context.Request.Path.Value,
-                Method = context.Request.Method,
-                Query = context.Request.QueryString.Value,
-                User = context.User?.Identity?.Name ?? "Anonymous",
-                TraceId = context.TraceIdentifier,
-                ExceptionType = ex.GetType().Name
-            };
-
-            // 模拟流式处理延迟
-            await Task.Delay(10);
-            // _logger.LogDebug("Exception context collected: {Context}", JsonSerializer.Serialize(contextInfo));
-        }
-        catch
-        {
-            // 采集过程本身不应抛出异常影响主流程
-        }
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(response),
+            context.RequestAborted);
     }
 
     private void RecordExceptionSpan(Exception exception)

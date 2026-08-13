@@ -29,7 +29,7 @@ class RPCClient {
   private endpoint: string;
 
   constructor() {
-    this.endpoint = process.env.RPC_URL || 'https://rpc.agentproject.io';
+    this.endpoint = import.meta.env.VITE_RPC_URL || 'https://rpc.agentproject.io';
   }
 
   /**

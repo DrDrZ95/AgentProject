@@ -1,952 +1,180 @@
-# AgentProject - AI 智能代理平台
+# AgentProject
 
-> 一个企业级 AI 代理框架，基于 .NET 8.0 和 React 构建，专为自主任务执行和智能工作流自动化设计。
-> All files and solution logic are generated from Manus. reference: https://manus.im/
+AgentProject 是一个基于 .NET 8 和 React 19 的模块化 AI Agent 平台，在同一仓库中整合了大模型编排、检索增强生成（RAG）、工作流、工具调用、实时通信与运维遥测。
 
-### 📢 作者留言
+[English](./README.md)
 
-本项目仍然不断在优化中，作者争取一周做到 3+ 次更新和优化。
+> 项目状态：持续开发中。源码项目目前可正常构建，但部分基础设施和集成模块仍依赖特定环境、外部服务与凭据；生产部署前请逐项验证相关配置和文档。
 
-**C# 网上没输过，现实没赢过. Man! what can i say?** 🚀
+## 主要组件
 
-## 2026-02-01 心得
-由于Manus近期对关键功能进行阉割，以及其reddit社区愈演愈烈的问题暴露，导致作者对Manus的期望越来越低。
+| 组件 | 路径 | 作用 |
+| --- | --- | --- |
+| Agent API | `apps/agent-api/Agent.Api` | ASP.NET Core API、认证、工作流、RAG、SignalR、MCP 与 Semantic Kernel 集成 |
+| Application/Core | `apps/agent-api/Agent.Application`、`Agent.Core` | 应用服务、领域模型、数据访问、工具、记忆与编排 |
+| MCP 网关 | `apps/agent-api/Agent.McpGateway` | MCP 客户端抽象与外部工具适配 |
+| Agent UI | `apps/agent-ui` | 主要 React/Vite Agent 界面 |
+| 运维 API | `apps/agent-ops/Agent.Metering` | 计量、限流、遥测与 eBPF 相关运维接口 |
+| 运维 UI | `apps/agent-ops-ui` | React/Vite 运维与 MLOps 控制台 |
+| Agent 工具 | `apps/agent-tools` | Python 示例与 RAG 工具 |
+| 基础设施 | `infra` | Docker、Helm、Kubernetes、监控与 CI/CD 示例 |
+| LLM 工具 | `llm` | 模型服务与微调示例 |
 
-因为它变得更面向非专业用户，不管是支付体系的漏洞还是集成模型对于项目的改动效率和算力变得越来越**拉跨**，
-开始怀念刚发布不久的那个版本。
+## 核心能力
 
-迫使作者在近段时间需要重新思考，并更改为 Cursor / Claude Code / Antigravity / Codex 等专业的平台和工具进行继续构建。
+- 基于 Microsoft Semantic Kernel 的多模型编排
+- ChromaDB 检索增强生成集成
+- 工作流规划、执行、状态管理与 SignalR 通知
+- MCP 客户端和可扩展工具注册表
+- ASP.NET Core Identity、JWT 认证与权限授权
+- OpenTelemetry、Prometheus、Hangfire、Redis、PostgreSQL 与运维计量
+- 面向不同环境的 Docker、Kubernetes 和 Helm 配置资产
 
-**失望的不止是这个：**
+## 技术栈
 
-![唉](./docs/photo.png)
----
+- .NET 8 / ASP.NET Core / Entity Framework Core
+- React 19 / TypeScript 5 / Vite 6 / pnpm 10
+- PostgreSQL、Redis、ChromaDB
+- Semantic Kernel 与 Model Context Protocol
+- OpenTelemetry、Prometheus、Grafana、Jaeger
 
-[English Version](./README.md)
+## 仓库结构
 
-## 📋 目录
-
-- [项目概述](#项目概述)
-- [核心特性](#核心特性)
-- [技术栈](#技术栈)
-- [系统架构](#系统架构)
-- [系统需求](#系统需求)
-- [项目结构详解](#项目结构详解)
-- [快速开始](#快速开始)
-- [部署指南](#部署指南)
-- [核心模块](#核心模块)
-- [文档资源](#文档资源)
-- [开发指南](#开发指南)
-- [贡献指南](#贡献指南)
-- [许可证](#许可证)
-
----
-
-## 🎯 项目概述
-
-AgentProject 是一个企业级 AI 代理框架，融合了最先进的大语言模型（LLM）技术与强大的后端基础设施以及直观的前端界面。该平台通过智能工作流管理、检索增强生成（RAG）和沙箱任务处理，实现自主任务执行。
-
-### 核心亮点
-
-- **🤖 多模型支持**：集成 OpenAI、DeepSeek、Kimi 和 Llama 4 等多种开源和闭源模型
-- **🏗️ 分布式架构**：原生支持 Kubernetes 和 Docker，天生可扩展
-- **🔒 高级安全**：eBPF 系统监控、ASP.NET Core Identity 集成、细粒度访问控制
-- **⚡ 实时通信**：SignalR 实现即时更新和推送通知
-- **📊 企业级就绪**：完善的日志、分布式追踪和可观测性
-- **🎨 现代化 UI**：支持暗色主题，直观的工作流可视化
-
----
-
-## ✨ 核心特性
-
-### 🤖 AI & LLM 能力
-- **Semantic Kernel 集成** - 统一的 LLM 抽象层，支持多个模型提供商 (OpenAI、DeepSeek、Kimi、Llama 4)
-- **模型上下文协议 (MCP)** - 标准化工具集成框架，实现 AI 工具的无缝互操作
-- **检索增强生成（RAG）** - 与 ChromaDB 和自定义向量存储集成的智能知识库
-- **高级提示工程** - 具有动态变量替换和模板管理的提示系统
-- **模型微调工具** - 完整的脚本和工具支持自定义模型适配，集成 MLflow 追踪
-
-### ⚙️ 工作流与自动化
-- **智能工作流引擎** - 支持复杂多步骤任务的编排和执行
-- **工作流可视化** - 可视化工作流编辑器，支持拖拽操作
-- **沙箱终端集成** - 安全隔离的命令执行环境，防止恶意操作
-- **动态任务规划** - AI 驱动的自动待办清单生成和任务分解
-- **灵活交互处理** - 支持多种任务类型的交互模式
-
-### 🔐 系统与安全
-- **eBPF 检测模块** - 低级系统监控和安全威胁分析
-- **身份认证与授权** - ASP.NET Core Identity 完整实现
-- **自定义策略引擎** - 细粒度的角色和权限管理
-- **Web 搜索集成** - 支持 SearXNG 和 SerpApi 的实时信息检索
-
-### 📈 可观测性与运维
-- **Agent Trace** - AI 代理执行流的分布式追踪，基于 OpenTelemetry
-- **分布式追踪** - OpenTelemetry 集成，端到端请求可视化
-- **Prometheus 指标** - 全面的应用和系统健康指标
-- **MLflow 实验管理** - 模型训练和实验追踪
-- **结构化日志** - 关联 ID 和上下文贯穿整个调用栈
-
-### 🚀 基础设施与部署
-- **Docker 容器化** - 完整的 Docker Compose 多容器编排方案
-- **Kubernetes 支持** - Helm 图表和原始清单用于云部署
-- **YARP 反向代理** - 支持熔断器模式的智能网关
-- **高可用性设计** - 负载均衡和故障转移机制
-
----
-
-## 🛠 技术栈
-
-### 📱 后端技术
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| .NET | 8.0+ | 现代高性能 Web 框架 |
-| ASP.NET Core | 8.0+ | Web API 和实时通信 |
-| Entity Framework Core | 8.0+ | PostgreSQL ORM 映射 |
-| SignalR | 8.0+ | 实时双向通信 |
-| Autofac | Latest | 高级依赖注入容器 |
-| OpenTelemetry | Latest | 可观测性和分布式追踪 |
-| Semantic Kernel | Latest | LLM 抽象和编排 |
-| YARP | Latest | 反向代理和网关 |
-
-### 🎨 前端技术
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| React | 18.0+ | 现代 UI 框架 |
-| TypeScript | 5.0+ | 类型安全的 JavaScript |
-| SignalR Client | 8.0+ | 实时通知客户端 |
-| Tailwind CSS | Latest | 现代 CSS 框架 |
-| 主题系统 | 内置 | 亮色/暗色主题切换 |
-
-### 💾 数据与存储
-| 组件 | 用途 |
-|------|------|
-| PostgreSQL 12+ | 主关系数据库，存储元数据 |
-| ChromaDB | 向量数据库，支持 RAG 功能 |
-| Redis (可选) | 缓存层，提升查询性能 |
-
-### 🐳 容器化与编排
-| 组件 | 用途 |
-|------|------|
-| Docker | 容器化应用和服务 |
-| Docker Compose | 本地开发多容器编排 |
-| Kubernetes 1.21+ | 生产环境云部署 |
-| Helm 3.0+ | K8s 包管理和模板化 |
-
-### 📊 监控与运维
-| 组件 | 用途 |
-|------|------|
-| Prometheus | 指标收集和存储 |
-| Grafana (可选) | 指标可视化面板 |
-| MLflow | 机器学习实验追踪 |
-| Elasticsearch (可选) | 日志索引和搜索 |
-
-### 🔗 集成与扩展
-| 组件 | 用途 |
-|------|------|
-| Model Context Protocol (MCP) | 标准化工具集成框架 |
-| Nginx | Web 服务器和负载均衡 |
-| SearXNG / SerpApi | Web 搜索集成 |
-
----
-
-## 🏗 系统架构
-
-### 分层架构设计 (Layered Architecture Pattern)
-
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                        Layer 1: Presentation                          ┃
-┃  ┌─────────────────────────────────────────────────────────────┐   ┃
-┃  │  React 18+ Application Interface (agent-ui)                 │   ┃
-┃  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────┐  │   ┃
-┃  │  │  Dashboard       │  │  Workflow        │  │  Task    │  │   ┃
-┃  │  │  - Analytics     │  │  - Editor        │  │  - Board │  │   ┃
-┃  │  │  - Overview      │  │  - Visualizer    │  │  - Cards │  │   ┃
-┃  │  └──────────────────┘  └──────────────────┘  └──────────┘  │   ┃
-┃  └─────────────────────────────────────────────────────────────┘   ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-                                    ↕                                   
-                        HTTP/HTTPS + WebSocket                          
-                                    ↕                                   
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                    API 网关层                                        ┃
-┃              (Nginx / YARP - 负载均衡)                              ┃
-└─────────────────────────────┬───────────────────────────────┘       
-                              │                                         
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃           业务逻辑层 (Application Layer)                      ┃
-┃                      ASP.NET Core Backend                     ┃
-┃                                                                ┃
-┃  ┌──────────────────────────────────────────────────────┐   ┃
-┃  │  Agent.Api (启动、配置、路由)                         │   ┃
-┃  │  ├─ Program.cs: 应用入口点和 DI 配置               │   ┃
-┃  │  ├─ GlobalUsings.cs: 全局命名空间声明              │   ┃
-┃  │  ├─ Controllers: REST API 路由端点                │   ┃
-┃  │  └─ Extensions: 模块化服务注册和配置              │   ┃
-┃  └──────────────────────────────────────────────────────┘   ┃
-┃                                                                ┃
-┃  ┌──────────────────────────────────────────────────────┐   ┃
-┃  │  Agent.Application (应用编排和业务流程)              │   ┃
-┃  │  ├─ DTOs: 请求/响应数据传输对象                   │   ┃
-┃  │  ├─ Mappers: 实体和 DTO 映射逻辑                  │   ┃
-┃  │  ├─ Validators: 业务规则验证                       │   ┃
-┃  │  ├─ Commands: CQRS 命令处理                        │   ┃
-┃  │  ├─ Queries: CQRS 查询处理                         │   ┃
-┃  │  ├─ Events: 领域事件定义                           │   ┃
-┃  │  └─ Behaviors: 管道行为和拦截                     │   ┃
-┃  └──────────────────────────────────────────────────────┘   ┃
-┃                                                                ┃
-┃  ┌──────────────────────────────────────────────────────┐   ┃
-┃  │  Agent.Core (核心业务逻辑 - Domain Layer)           │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 身份认证与授权 (Identity & Authorization)        │   ┃
-┃  │    ├─ Authorization Handlers (角色、策略、声明)      │   ┃
-┃  │    ├─ Authorization Policies (权限规则)             │   ┃
-┃  │    └─ Identity Services (用户、角色管理)            │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 工作流与任务 (Workflow & Task Management)        │   ┃
-┃  │    ├─ WorkflowService (工作流编排)                 │   ┃
-┃  │    ├─ TaskService (任务管理)                        │   ┃
-┃  │    ├─ StateManager (状态跟踪)                       │   ┃
-┃  │    └─ ExecutionContext (执行上下文)                │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 系统监控与检测 (System Monitoring)              │   ┃
-┃  │    ├─ eBPF Services (进程监控)                     │   ┃
-┃  │    ├─ SecurityDetector (威胁检测)                  │   ┃
-┃  │    └─ HealthChecker (健康检查)                     │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 数据访问层 (Data Access & Persistence)          │   ┃
-┃  │    ├─ Entity Models (数据实体)                      │   ┃
-┃  │    ├─ DbContext (EF Core 上下文)                   │   ┃
-┃  │    ├─ Repositories (通用仓储模式)                  │   ┃
-┃  │    └─ Migrations (数据库迁移)                       │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 实时通信 (Real-Time Communication)              │   ┃
-┃  │    ├─ SignalR Hubs (实时消息推送)                  │   ┃
-┃  │    ├─ NotificationService (通知服务)               │   ┃
-┃  │    └─ ConnectionManager (连接管理)                │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 网关与路由 (Gateway & Routing)                  │   ┃
-┃  │    ├─ YARP Configuration (YARP 配置)              │   ┃
-┃  │    ├─ RouteService (路由服务)                      │   ┃
-┃  │    └─ CircuitBreaker (熔断器模式)                  │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 异常与日志 (Exception & Logging)                │   ┃
-┃  │    ├─ Exception Handlers (异常处理)                │   ┃
-┃  │    ├─ Logging Middleware (日志中间件)              │   ┃
-┃  │    └─ Correlation ID (关联 ID)                     │   ┃
-┃  └──────────────────────────────────────────────────────┘   ┃
-┃                                                                ┃
-┃  ┌──────────────────────────────────────────────────────┐   ┃
-┃  │  Agent.McpGateway (AI 编排引擎 - AI Orchestration)  │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ LLM 集成与管理 (LLM Integration & Management)    │   ┃
-┃  │    ├─ SemanticKernelService (SK 封装)              │   ┃
-┃  │    ├─ ModelRouter (模型路由)                        │   ┃
-┃  │    ├─ PluginManager (插件管理)                      │   ┃
-┃  │    └─ PromptOptimizer (提示优化)                    │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 知识库与 RAG (Knowledge Base & RAG)              │   ┃
-┃  │    ├─ RagService (RAG 核心服务)                    │   ┃
-┃  │    ├─ DocumentProcessor (文档处理)                 │   ┃
-┃  │    ├─ EmbeddingGenerator (向量生成)                │   ┃
-┃  │    ├─ VectorDatabaseService (向量库操作)           │   ┃
-┃  │    └─ SimilaritySearcher (相似度搜索)              │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 工作流编排 (Workflow Orchestration)              │   ┃
-┃  │    ├─ WorkflowService (工作流引擎)                 │   ┃
-┃  │    ├─ WorkflowVisualization (可视化编辑器后端)    │   ┃
-┃  │    ├─ WorkflowExecutor (执行器)                    │   ┃
-┃  │    ├─ WorkflowParser (解析器)                      │   ┃
-┃  │    └─ StateManager (状态管理)                       │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 提示与模板 (Prompt Engineering)                 │   ┃
-┃  │    ├─ PromptService (提示管理)                     │   ┃
-┃  │    ├─ TemplateEngine (模板引擎)                    │   ┃
-┃  │    ├─ VariableResolver (变量解析)                  │   ┃
-┃  │    └─ PromptCache (提示缓存)                        │   ┃
-┃  │    └─ ToolCallEnhancer (工具调用可靠性增强)       │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 沙箱与隔离执行 (Sandbox & Isolated Execution)    │   ┃
-┃  │    ├─ SandboxService (沙箱服务)                    │   ┃
-┃  │    ├─ ProcessExecutor (进程执行)                   │   ┃
-┃  │    ├─ EnvironmentManager (环境管理)                │   ┃
-┃  │    └─ SecurityManager (安全隔离)                   │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 搜索与集成 (Search & Integration)                │   ┃
-┃  │    ├─ WebSearchService (Web 搜索)                  │   ┃
-┃  │    ├─ CacheWarmupService (智能缓存预加载)         │   ┃
-┃  │    ├─ McpTools (MCP 工具集)                        │   ┃
-┃  │    ├─ FileUploadService (文件管理)                 │   ┃
-┃  │    └─ UserInputService (用户输入)                  │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 模型微调 (Model Fine-Tuning)                     │   ┃
-┃  │    ├─ FinetuneService (微调服务)                   │   ┃
-┃  │    ├─ MeteringService (用量追踪与计费)            │   ┃
-┃  │    ├─ DatasetPreparer (数据集准备)                 │   ┃
-┃  │    ├─ ModelTrainer (模型训练)                      │   ┃
-┃  │    └─ MetricsCalculator (指标计算)                │   ┃
-┃  │                                                       │   ┃
-┃  │  ▶ 可观测性 (Observability)                         │   ┃
-┃  │    ├─ AgentTraceService (代理执行追踪)            │   ┃
-┃  │    ├─ TelemetryService (遥测服务)                 │   ┃
-┃  │    ├─ MetricsCollector (指标收集)                 │   ┃
-┃  │    └─ TraceExporter (追踪导出)                     │   ┃
-┃  └──────────────────────────────────────────────────────┘   ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-                                    ↕                                   
-          ┌───────────────────────┼───────────────────┐                
-          │                       │                   │                
-    ┌─────▼──────┐        ┌──────▼─────┐    ┌─────▼──────┐             
-    │ PostgreSQL │        │  ChromaDB   │    │ 外部服务   │             
-    │ (元数据)   │        │  (向量)     │    │            │             
-    │            │        │             │    │ - OpenAI   │             
-    │ - 用户     │        │ - 嵌入向量  │    │ - DeepSeek │             
-    │ - 工作流   │        │ - 文档      │    │ - Kimi     │             
-    │ - 任务     │        │ - RAG 索引  │    │ - Llama 4  │             
-    │ - 配置     │        │             │    │ - SearXNG  │             
-    └────────────┘        └─────────────┘    └────────────┘             
+```text
+AgentProject/
+├── apps/
+│   ├── agent-api/       # 主 .NET API 及相关类库
+│   ├── agent-ui/        # 主 React 界面
+│   ├── agent-ops/       # 计量与运维 API
+│   ├── agent-ops-ui/    # 运维界面
+│   └── agent-tools/     # Python 工具与示例
+├── docs/                # 集成与部署文档
+├── infra/               # Docker、Kubernetes、Helm、CI/CD
+├── llm/                 # 微调与模型服务工具
+├── skills/              # Agent 提示词与技能资源
+└── test/                # .NET 测试项目
 ```
 
-### 架构特点说明
+## 环境要求
 
-#### 📌 分离关注点 (Separation of Concerns)
-- 各层职责单一，清晰界定
-- 依赖方向从上到下
-- 每层可独立测试和维护
+- .NET SDK 8.0 或更高版本，并具备 .NET 8 目标框架支持
+- Node.js 22.12 或更高版本
+- Corepack 与 pnpm 10.33.0（两个前端项目均已固定版本）
+- 仅在需要外部基础设施时安装 Docker 和 Docker Compose
 
-#### 🔄 数据流向
-1. **请求流向**：表现层 → 网关 → 应用层 → 业务层 → 数据层 → 存储
-2. **响应流向**：存储 → 数据层 → 业务层 → 应用层 → 网关 → 表现层
-3. **通知流向**：SignalR Hub → 网关 → 表现层 (实时推送)
+## 从源码构建
 
-#### 🛡️ 横切关注点
-- **认证/授权**：在网关和业务层进行
-- **日志/追踪**：在所有层收集
-- **错误处理**：统一在网关层处理
-- **缓存**：在数据层实现
+下列命令只编译代码，不启动服务，也不会连接数据库或其他外部系统。
 
----
-
-## 💻 系统需求
-
-### 硬件最低配置
-```
-CPU:    4 核心 (建议 8 核或更多)
-内存:    8 GB (建议 16 GB 或更多)
-存储:    50 GB SSD (建议 100 GB+)
-网络:    稳定的 1Mbps+ 网络连接
-```
-
-### 软件依赖
-
-#### 必需组件
-```
-.NET SDK         8.0.0 或更高
-Node.js          16.x 或更高
-npm / yarn       7.0+ 或 1.22.x+
-Docker           20.10+ (容器部署)
-Docker Compose   1.29+ (容器编排)
-PostgreSQL       12.x 或更高
-Git              2.20+
-```
-
-#### 可选组件
-```
-Kubernetes       1.21+ (云部署)
-Helm             3.0+ (K8s 包管理)
-NVIDIA CUDA      11.0+ (GPU 加速)
-Prometheus       最新版 (监控)
-MLflow           最新版 (实验追踪)
-Elasticsearch    7.0+ (日志分析)
-Redis            6.0+ (缓存加速)
-```
-
-### 网络要求
-```
-- 能够访问各类 LLM 服务的网络环境
-- 防火墙规则允许：
-  * 3000 (前端)
-  * 5000 (后端 API)
-  * 5432 (PostgreSQL)
-  * 8000 (ChromaDB)
-  * 9090 (Prometheus)
-```
-
----
-
-## 📁 项目结构详解
-
-### apps/ - 应用程序代码
-
-```
-apps/
-├─ agent-api/                         # 🔧 后端 API 服务
-│  ├─ Agent.Api/                      # 🎯 应用启动与配置
-│  ├─ Agent.Application/              # 💼 应用编排层
-│  ├─ Agent.Core/                     # 💎 核心业务逻辑
-│  └─ Agent.McpGateway/               # 🤖 AI 编排引擎
-│
-├─ agent-ui/                          # 🎨 React 前端应用
-│  ├─ public/                         # 📊 静态资源
-│  └─ src/                            # 💻 源代码
-│     ├─ components/                  # 🧩 可复用 UI 组件
-│     ├─ pages/                       # 📄 应用页面
-│     ├─ services/                    # 🔌 API 服务
-│     ├─ hooks/                       # ⚛️ 自定义 React Hooks
-│     ├─ store/                       # 🗄️ 状态管理
-│     ├─ styles/                      # 🎨 CSS 样式
-│     ├─ utils/                       # 🛠️ 工具函数
-│     └─ types/                       # 📋 TypeScript 类型
-│
-├─ agent-ops-ui/                      # 📈 运维监控 UI
-│  └─ ...                             # 系统指标仪表板
-│
-├─ agent-ops/                         # 🔍 运维服务
-│  └─ Agent.Metering/                 # 📊 用量计量与计费
-│
-└─ agent-tools/                       # 🛠️ 实用工具与脚本
-    └─ ...                            # Python 工具集合
-```
-
-### docs/ - 文档
-
-```
-docs/
-├─ agent-ui_dependency_summary.md     # 📋 Agent UI 依赖汇总
-├─ api_documentation.md               # 📚 API 文档
-├─ api_documentation.zh_CN.md         # 📚 API 文档(中文)
-├─ chromadb_integration.md            # 🔍 ChromaDB 配置指南
-├─ chromadb_integration.zh_CN.md      # 🔍 ChromaDB 配置(中文)
-├─ clickhouse_integration.md          # 💾 ClickHouse 集成
-├─ clickhouse_integration.zh_CN.md    # 💾 ClickHouse 集成(中文)
-├─ deepo_unsloth_cuda_setup.md        # 🎓 Deepo & Unsloth CUDA 配置
-├─ deepo_unsloth_cuda_setup.zh_CN.md  # 🎓 Deepo CUDA 配置(中文)
-├─ docker_quickstart.md               # 🐳 Docker 快速入门
-├─ docker_quickstart.zh_CN.md         # 🐳 Docker 快速入门(中文)
-├─ dynamic_external_access.md         # 🌐 动态外部访问配置
-├─ ebpf_integration.md                # 🔒 eBPF 安全模块
-├─ environment_setup.md               # ⚙️ 环境配置
-├─ environment_setup.zh_CN.md         # ⚙️ 环境配置(中文)
-├─ github_upload.md                   # 📤 GitHub 上传指南
-├─ github_upload.zh_CN.md             # 📤 GitHub 上传指南(中文)
-├─ grafana_integration.md             # 📊 Grafana 仪表板
-├─ grafana_integration.zh_CN.md       # 📊 Grafana 仪表板(中文)
-├─ harbor_installation.md             # 🏗️ Harbor 镜像仓库安装
-├─ helm_installation.md               # ⎈ Helm 图表指南
-├─ identity_signalr_integration.md    # 🔐 认证与实时通信
-├─ kubernetes_istio_grayscale_release.zh_CN.md  # ☸️ K8s 部署
-├─ mcp_integration_guide.zh_CN.md     # 🔌 MCP 集成指南
-├─ mlflow_integration.md              # 📈 MLflow 实验追踪
-├─ mlflow_integration.zh_CN.md        # 📈 MLflow 实验追踪(中文)
-├─ openmanus_integration.md           # 🤖 OpenManus 集成
-├─ openmanus_integration.zh_CN.md     # 🤖 OpenManus 集成(中文)
-├─ prometheus_integration.md          # 📉 Prometheus 监控
-├─ prometheus_integration.zh_CN.md    # 📉 Prometheus 监控(中文)
-├─ prompt-engineering-best-practices.md  # 📝 提示工程最佳实践
-├─ rag_prompt_engineering.md          # 🤖 RAG 与提示工程
-├─ sandbox_terminal_integration.md    # 🔒 沙箱环境
-├─ semantic_kernel_examples.md        # 🧠 Semantic Kernel 示例
-├─ ssh_setup.md                       # 🔑 SSH 配置
-├─ ssh_setup.zh_CN.md                 # 🔑 SSH 配置(中文)
-├─ unsloth_lora_finetuning.md         # 🎓 模型微调
-├─ unsloth_lora_finetuning.zh_CN.md   # 🎓 模型微调(中文)
-├─ vllm_integration.md                # ⚡ vLLM 集成
-├─ vllm_integration.zh_CN.md          # ⚡ vLLM 集成(中文)
-├─ workflow_integration.md            # 🔄 工作流引擎
-└─ yarp_gateway_integration.md        # 🚪 YARP 网关
-```
-
-### infra/ - 基础设施
-
-```
-infra/
-├─ cicd/                              # 🔄 CI/CD 流水线配置
-│  └─ ...                             # GitHub Actions、Jenkins
-│
-├─ docker/                            # 🐳 Docker 配置
-│  ├─ Dockerfile.webapi               # 后端 Dockerfile
-│  ├─ Dockerfile.react                # 前端 Dockerfile
-│  ├─ docker-compose.yml              # Compose 编排
-│  ├─ nginx.conf                      # Nginx 配置
-│  └─ ...
-│
-├─ envsetup/                          # 🛠️ 环境设置脚本
-│  ├─ install_dependencies.sh         # 安装依赖
-│  ├─ setup_database.sh               # 数据库设置
-│  └─ ...
-│
-├─ helm/                              # ⎈ Helm 图表
-│  └─ agent-project/                  # K8s 部署图表
-│     ├─ Chart.yaml
-│     ├─ values.yaml
-│     └─ templates/
-│
-├─ kubernetes/                        # ☸️ K8s 原始清单
-│  ├─ namespace.yaml
-│  ├─ deployments.yaml
-│  ├─ services.yaml
-│  ├─ ingress.yaml
-│  └─ ...
-│
-└─ git_ci.yml                         # 🔧 GitHub Actions 工作流
-```
-
-### llm/ - 机器学习组件
-
-```
-llm/
-├─ deploy/                            # 🚀 模型部署
-│  ├─ model_server.py                 # 模型服务 API
-│  ├─ requirements.txt
-│  └─ Dockerfile
-│
-└─ finetune/                          # 🎓 模型微调
-   ├─ train.py                        # 训练脚本
-   ├─ evaluate.py                     # 评估脚本
-   ├─ dataset_loader.py               # 数据加载工具
-   ├─ config.yaml                     # 训练配置
-   └─ ...
-```
-
-### test/ - 测试套件
-
-```
-test/
-├─ Agent.Api.Tests/                   # 🧪 API 层测试
-│  └─ ...                             # 控制器和端点测试
-│
-└─ Agent.Core.Tests/                  # 🧪 核心业务逻辑测试
-   ├─ Unit/                           # 单元测试
-   │  ├─ Services/                    # 服务层测试
-   │  ├─ Repositories/                # 数据访问测试
-   │  └─ ...
-   ├─ Integration/                    # 集成测试
-   │  ├─ ApiIntegrationTests.cs
-   │  ├─ DatabaseIntegrationTests.cs
-   │  └─ WorkflowIntegrationTests.cs
-   └─ MockData/                       # 测试数据工厂
-      ├─ TestDataFactory.cs
-      └─ MockServices.cs
-```
-
-## 🚀 快速开始
-
-### 选项 1️⃣：Docker 部署（推荐）
+### 后端
 
 ```bash
-# 克隆仓库
-git clone https://github.com/DrDrZ95/AgentProject.git
-cd AgentProject
-
-# 进入 Docker 目录
-cd infra/docker
-
-# 启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看实时日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
+dotnet build apps/agent-api/Agent.Api/Agent.Api.csproj --configuration Release
+dotnet build apps/agent-ops/Agent.Metering/Agent.Metering.csproj --configuration Release
 ```
 
-**服务访问地址：**
-- 🌐 前端 UI: http://localhost:3000
-- 📡 后端 API: http://localhost:5000
-- 📚 API 文档: http://localhost:5000/swagger
-- 📊 Prometheus: http://localhost:9090
-
-### 选项 2️⃣：本地开发部署
+### 主界面
 
 ```bash
-# 克隆仓库
-git clone https://github.com/DrDrZ95/AgentProject.git
-cd AgentProject
-
-# 1. 配置后端
-cd apps/agent-api/Agent.Api
-dotnet restore
-dotnet build
-dotnet run
-
-# 2. 在另一个终端配置前端
 cd apps/agent-ui
-npm install
-npm start
-
-# 3. 配置数据库 (需要 PostgreSQL 运行)
-# 更新 appsettings.json 中的数据库连接字符串
-# 然后运行迁移
-dotnet ef database update
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run lint
+pnpm run build
 ```
 
-### 选项 3️⃣：Kubernetes 部署
+### 运维界面
 
 ```bash
-# 创建命名空间
-kubectl create namespace agent-project
-
-# 使用 Helm 安装
-cd infra/helm
-helm install agent-project ./agent-project-chart \
-  -n agent-project \
-  -f values.yaml
-
-# 验证部署
-kubectl get pods -n agent-project
-kubectl get svc -n agent-project
-
-# 查看部署日志
-kubectl logs -n agent-project -l app=agent-project -f
+cd apps/agent-ops-ui
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run lint
+pnpm run build
 ```
 
----
+两个前端的生产资源分别输出到各自的 `dist/` 目录。
 
-## 📦 部署指南
+## 配置
 
-### Docker Compose 完整配置
+不要把凭据提交到 Git。请使用 .NET User Secrets、环境变量或部署平台提供的 Secret Manager。
 
-```yaml
-# 服务清单
-services:
-  agent-api:           # ASP.NET Core 后端
-  agent-ui:            # React 前端
-  postgres:            # 关系型数据库
-  chromadb:            # 向量数据库
-  nginx:               # 反向代理
-  prometheus:          # 监控 (可选)
-  mlflow:              # 实验追踪 (可选)
+API 必需配置：
+
+| 环境变量 | 说明 |
+| --- | --- |
+| `ConnectionStrings__DefaultConnection` | PostgreSQL 连接字符串 |
+| `JwtSettings__SecretKey` | 至少包含 32 字节的 JWT 签名密钥 |
+| `SemanticKernel__OpenAIApiKey` | 使用 OpenAI 时的 API Key |
+| `SemanticKernel__AzureOpenAIEndpoint` | 使用 Azure OpenAI 时的服务地址 |
+| `SemanticKernel__AzureOpenAIApiKey` | 使用 Azure OpenAI 时的 API Key |
+
+OpenAI 与 Azure OpenAI 配置二选一。模型名称可通过 `SemanticKernel__ChatModel` 与 `SemanticKernel__EmbeddingModel` 覆盖。
+
+默认管理员初始化默认关闭。如需启用，必须从外部提供凭据：
+
+```text
+Identity__SeedAdmin__Enabled=true
+Identity__SeedAdmin__Email=admin@example.com
+Identity__SeedAdmin__Password=<高强度密码>
 ```
 
-### 环境变量配置
+前端环境变量属于公开的构建期配置，禁止存放任何密钥：
 
-```env
-# infra/docker/.env 文件
-
-# PostgreSQL 数据库
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_USER=agent_user
-POSTGRES_DB=agent_db
-DATABASE_CONNECTION_STRING=Host=postgres;Port=5432;Database=agent_db;Username=agent_user;Password=your_secure_password
-
-# API 配置
-API_ENDPOINT=https://your-domain.com
-API_PORT=5000
-API_LOG_LEVEL=Information
-
-# LLM 服务配置
-OPENAI_API_KEY=sk-xxxxxxxxxxxxx
-OPENAI_MODEL=gpt-4
-DEEPSEEK_API_KEY=xxxxxxxxxxxxx
-DEEPSEEK_MODEL=deepseek-chat
-KIMI_API_KEY=xxxxxxxxxxxxx
-KIMI_MODEL=moonshot-v1
-LLAMA_API_ENDPOINT=http://localhost:8000
-LLAMA_MODEL=llama-4-70b
-
-# 身份认证
-JWT_SECRET_KEY=your-super-secret-key-min-32-chars
-JWT_EXPIRATION_MINUTES=60
-IDENTITY_SEED_ADMIN_PASSWORD=Admin@123456
-
-# SignalR
-SIGNALR_ENABLE=true
-
-# 向量数据库
-CHROMADB_HOST=chromadb
-CHROMADB_PORT=8000
-
-# Web 搜索
-ENABLE_WEB_SEARCH=true
-SEARXNG_ENDPOINT=http://searxng:8888
-
-# 监控和遥测
-ENABLE_PROMETHEUS=true
-PROMETHEUS_ENDPOINT=http://prometheus:9090
-ENABLE_MLFLOW=true
-MLFLOW_ENDPOINT=http://mlflow:5000
-
-# 日志
-LOG_LEVEL=Information
-ELASTICSEARCH_ENDPOINT=http://elasticsearch:9200 (可选)
+```text
+VITE_API_BASE_URL=http://localhost:5069/api/v1
+VITE_RPC_URL=http://localhost:5069
 ```
 
-### 生产部署检查清单
+模型提供商密钥只保留在 `Agent.Api`，不会打包进浏览器 JavaScript。
 
-1. 配置 HTTPS/TLS 证书
-2. 设置数据库备份和点对点复制
-3. 配置外部身份认证 (OIDC/LDAP)
-4. 启用审计日志记录
-5. 部署监控告警系统
-6. 配置日志聚合和分析
-7. 测试灾难恢复程序
-8. 建立 CI/CD 自动化管道
-9. 性能和压力测试
-10. 安全审计和渗透测试
+## 本地开发
 
----
-
-## 🔧 核心模块详解
-
-### Agent.Api - 应用入口
-- **职责**：应用启动、依赖注入、中间件配置
-- **关键文件**：Program.cs, GlobalUsings.cs
-- **扩展点**：ServiceCollectionExtensions, MiddlewareExtensions
-
-### Agent.Application - 应用编排
-- **职责**：CQRS 模式实现、DTO 映射、业务流程编排
-- **关键特性**：MediatR 命令/查询处理、自动映射、验证管道
-- **扩展点**：CommandHandlers, QueryHandlers, Behaviors
-
-### Agent.Core - 核心业务逻辑
-- **授权模块**：角色、策略、声明授权
-- **工作流与任务**：编排和执行复杂流程
-- **系统监控**：eBPF 和安全检测
-- **数据访问**：EF Core 仓储
-- **实时通信**：SignalR 集成
-- **网关与路由**：YARP 反向代理
-- **异常日志**：统一异常处理和结构化日志
-- **身份管理**：用户、角色、权限
-
-### Agent.McpGateway - AI 编排引擎
-- **LLM 集成**：Semantic Kernel 封装、模型路由
-- **知识库与 RAG**：文档处理、向量数据库、相似度搜索
-- **工作流编排**：复杂任务编排和执行，支持可视化编辑器
-- **提示工程**：模板管理、优化和工具调用可靠性增强
-- **沙箱执行**：隔离命令运行
-- **搜索与集成**：Web 搜索、缓存预热、工具集成、文件管理
-- **模型微调**：数据集准备、模型训练、用量计量
-- **可观测性**：Agent 追踪、遥测和指标收集
-
----
-
-## 📚 文档资源
-
-| 文档 | 说明 | 链接 |
-|------|------|------|
-| `api_documentation.md` | 完整 API 参考与示例 | [查看](./docs/api_documentation.zh_CN.md) |
-| `chromadb_integration.md` | 向量数据库设置与 RAG 配置 | [查看](./docs/chromadb_integration.zh_CN.md) |
-| `clickhouse_integration.md` | ClickHouse 分析数据库集成 | [查看](./docs/clickhouse_integration.zh_CN.md) |
-| `deepo_unsloth_cuda_setup.md` | Deepo 和 Unsloth CUDA 环境配置 | [查看](./docs/deepo_unsloth_cuda_setup.zh_CN.md) |
-| `docker_quickstart.md` | Docker 部署快速入门 | [查看](./docs/docker_quickstart.zh_CN.md) |
-| `dynamic_external_access.md` | 动态外部访问配置 | [查看](./docs/dynamic_external_access.md) |
-| `ebpf_integration.md` | eBPF 安全模块与系统监控 | [查看](./docs/ebpf_integration.md) |
-| `environment_setup.md` | 开发环境配置指南 | [查看](./docs/environment_setup.zh_CN.md) |
-| `github_upload.md` | GitHub 仓库上传指南 | [查看](./docs/github_upload.zh_CN.md) |
-| `grafana_integration.md` | Grafana 仪表板与可视化 | [查看](./docs/grafana_integration.zh_CN.md) |
-| `harbor_installation.md` | Harbor 容器镜像仓库安装 | [查看](./docs/harbor_installation.md) |
-| `helm_installation.md` | Helm 图表 K8s 部署 | [查看](./docs/helm_installation.md) |
-| `identity_signalr_integration.md` | 身份认证与实时通信 | [查看](./docs/identity_signalr_integration.md) |
-| `mcp_integration_guide.zh_CN.md` | 模型上下文协议集成指南 | [查看](./docs/mcp_integration_guide.zh_CN.md) |
-| `mlflow_integration.md` | MLflow 实验追踪与模型管理 | [查看](./docs/mlflow_integration.zh_CN.md) |
-| `openmanus_integration.md` | OpenManus 集成指南 | [查看](./docs/openmanus_integration.zh_CN.md) |
-| `prometheus_integration.md` | Prometheus 指标与监控 | [查看](./docs/prometheus_integration.zh_CN.md) |
-| `prompt-engineering-best-practices.md` | 提示工程最佳实践指南 | [查看](./docs/prompt-engineering-best-practices.md) |
-| `rag_prompt_engineering.md` | RAG 实现与提示优化 | [查看](./docs/rag_prompt_engineering.md) |
-| `sandbox_terminal_integration.md` | 安全沙箱执行环境 | [查看](./docs/sandbox_terminal_integration.md) |
-| `semantic_kernel_examples.md` | Semantic Kernel 使用示例 | [查看](./docs/semantic_kernel_examples.md) |
-| `ssh_setup.md` | SSH 远程访问配置 | [查看](./docs/ssh_setup.zh_CN.md) |
-| `unsloth_lora_finetuning.md` | Unsloth LoRA 模型微调 | [查看](./docs/unsloth_lora_finetuning.zh_CN.md) |
-| `vllm_integration.md` | vLLM 高性能推理 | [查看](./docs/vllm_integration.zh_CN.md) |
-| `workflow_integration.md` | 工作流引擎设计与实现 | [查看](./docs/workflow_integration.md) |
-| `yarp_gateway_integration.md` | YARP 反向代理与网关 | [查看](./docs/yarp_gateway_integration.md) |
-
-## 👨‍💻 开发指南
-
-### 本地构建
+配置 PostgreSQL、JWT 与任一模型提供商后，可启动 API：
 
 ```bash
-# 后端
-cd apps/agent-api
-dotnet restore
-dotnet build -c Release
-dotnet test
-
-# 前端
-cd apps/agent-ui
-npm install
-npm run build
-npm test
+dotnet run --project apps/agent-api/Agent.Api/Agent.Api.csproj
 ```
 
-### 开发工作流
+默认开发地址为 `http://localhost:5069` 与 `https://localhost:7185`。在任一前端目录执行 `pnpm dev` 即可启动界面；两个前端默认都使用 `http://127.0.0.1:3000`，同时启动时请为其中一个指定其他端口：
 
-1. **创建功能分支**：`git checkout -b feature/your-feature`
-2. **编写代码**：遵循编码规范
-3. **编写测试**：单元和集成测试
-4. **提交更改**：`git commit -am 'Add feature'`
-5. **推送代码**：`git push origin feature/your-feature`
-6. **创建 PR**：详细描述改动内容
-7. **代码审查**：等待维护者审查
-8. **合并**：通过审查后合并到主分支
+```bash
+pnpm dev -- --port 3001
+```
 
-### 编码规范
+## 默认安全策略
 
-- **C#**：遵循 Microsoft C# 编码指南
-- **TypeScript**：使用 ESLint 和 Prettier
-- **提交信息**：`[feat|fix|docs|style|refactor|test]: description`
+- Sandbox Terminal 接口要求 `system.admin` 权限。
+- 系统信息接口不返回宿主进程环境变量。
+- Hangfire Dashboard 仅允许 `Administrator` 角色的已认证用户访问。
+- JWT 签名密钥和数据库凭据不再提供源码内置回退值。
+- 默认管理员创建为显式开启，并要求外部凭据。
+- Vite 不会把模型提供商密钥注入客户端代码。
 
----
+终端模块会在宿主进程执行命令。部署时必须使用可靠的隔离环境，并严格控制 `system.admin` 权限。
 
-## 🤝 贡献指南
+## 基础设施与部署
 
-我们欢迎任何形式的贡献！无论是代码改进、文档更新、Bug 修复还是新功能建议，都非常欢迎。
+`infra/docker/docker-compose.yml` 当前只编排 PostgreSQL、Redis、ChromaDB、Prometheus、Grafana、Jaeger 与 Nginx 等支撑组件，并不是包含 API 和 UI 的完整应用栈。Docker、Kubernetes 与 Helm 文件应视为针对具体环境的模板，生产使用前必须验证。
 
-### 贡献流程
+常用文档：
 
-1. Fork 本项目
-2. 创建您的功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
+- [环境配置](./docs/environment_setup.zh_CN.md)
+- [API 文档](./docs/api_documentation.zh_CN.md)
+- [Docker 快速开始](./docs/docker_quickstart.zh_CN.md)
+- [工作流集成](./docs/workflow_integration.md)
+- [MCP 集成指南](./docs/mcp_integration_guide.zh_CN.md)
+- [RAG 提示词工程](./docs/rag_prompt_engineering.md)
+- [Prometheus 集成](./docs/prometheus_integration.zh_CN.md)
+- [vLLM 集成](./docs/vllm_integration.zh_CN.md)
 
-### 欢迎反馈与建议
+## 开发约定
 
-- 💡 **在 PR 中分享您的优化建议**：如果您有改进代码、性能或用户体验的想法，欢迎在 Pull Request 中详细说明
-- 🐛 **报告 Bug**：如果您发现任何问题，请通过 Issue 反馈，并提供复现步骤
-- ✨ **功能建议**：对于新功能或改进建议，欢迎在 Issues 或 Discussions 中讨论
-- 📝 **文档改进**：如果文档有不清楚或缺失的地方，欢迎提交改进建议
+- 修改应限制在所属应用或架构层内。
+- 前端依赖变化时必须同步提交对应的 `pnpm-lock.yaml`。
+- `VITE_*` 变量会暴露给浏览器，严禁存放密钥。
+- 提交前至少构建受影响的后端与前端项目。
 
-### 贡献要求
+## 许可证
 
-- ✅ 所有测试必须通过
-- ✅ 代码符合项目风格指南
-- ✅ 提交信息清晰明确
-- ✅ PR 包含详细的改动说明
-- ✅ 涉及新功能的 PR 需要提供相应文档更新
-
-### 审查流程
-
-我们的维护团队会定期审查 Pull Request，您可能会收到以下反馈：
-
-- 代码审查意见
-- 要求补充测试
-- 建议文档更新
-- 性能或安全方面的优化建议
-
-请耐心对待审查过程，我们致力于保持代码质量和项目的长期可维护性。
-
----
-
-## 📄 许可证
-
-本项目采用 **MIT 许可证**。详见 [LICENSE](./LICENSE) 文件。
-
-MIT License 允许：
-- ✅ 商业使用
-- ✅ 修改代码
-- ✅ 分发
-- ✅ 私人使用
-
-条件：
-- 📌 必须包含许可证副本
-- 📌 必须说明重大改动
-
----
-
-## 🔗 相关资源
-
-### 官方文档
-- [.NET 8.0 文档](https://docs.microsoft.com/zh-cn/dotnet/)
-- [ASP.NET Core 文档](https://docs.microsoft.com/zh-cn/aspnet/core/)
-- [React 官方文档](https://zh-hans.react.dev/)
-- [TypeScript 文档](https://www.typescriptlang.org/zh/)
-
-### 相关项目
-- [Semantic Kernel](https://learn.microsoft.com/zh-cn/semantic-kernel/)
-- [ChromaDB](https://www.trychroma.com/)
-- [OpenTelemetry](https://opentelemetry.io/zh/)
-- [Docker 文档](https://docs.docker.com/)
-- [Kubernetes 文档](https://kubernetes.io/zh-cn/docs/)
-
-### 参考链接
-- **GitHub 仓库**：https://github.com/DrDrZ95/AgentProject
-
----
-
-## 📞 支持与反馈
-
-### 获取帮助
-
-- 📖 查看 [完整文档](./docs/)
-- 🐛 [报告 Bug](https://github.com/DrDrZ95/AgentProject/issues)
-- 💡 [请求功能](https://github.com/DrDrZ95/AgentProject/issues)
-- 💬 [讨论问题](https://github.com/DrDrZ95/AgentProject/discussions)
-
-### 社区支持
-
-- 查看现有 Issues 和 Discussions
-- 在 GitHub Discussions 参与讨论
-- 贡献改进和错误修复
-
----
-
-## 📊 项目统计
-
-- **编程语言**：C# (68.6%)、TypeScript (27.1%)、Python (2.6%)、Shell (0.8%)、HTML (0.6%)、Go Template (0.2%)、其他 (0.1%)
-- **框架版本**：.NET 8.0、React 18+、ASP.NET Core 8.0
-- **代码行数**：20,000+
-- **模块数量**：25+
-- **文档页数**：60+
-- **测试覆盖率**：80%+
-- **提交次数**：215+
-- **Star 数**：21+
-- **Fork 数**：3+
-
----
-
-## 🎯 路线图
-
-### 第一阶段 已完成 ✅
-- ✅ 基于 .NET 8.0 的核心 AI 代理框架
-- ✅ 带可视化编辑器的工作流管理系统
-- ✅ RAG (检索增强生成) 实现
-- ✅ 支持多容器编排的 Docker 部署
-- ✅ 分层架构设计的系统优化
-- ✅ 遵循整洁架构原则的模块化重构
-- ✅ 带统一响应模型的 OpenAPI 文档
-- ✅ 全面的单元测试和集成测试覆盖
-
-### 第二阶段 进行中 🚀
-- ✅ Agent Trace - AI 代理分布式追踪与可观测性
-- ✅ 暗黑主题支持 - UI 主题切换功能
-- ✅ 工作流可视化后端 - 可视化工作流编辑器后端
-- ✅ 缓存预热 - 智能缓存预加载
-- ✅ 工具调用可靠性增强 - 提升工具执行稳定性
-- ✅ OpenAPI 文档增强 - Scalar 集成和导出功能
-- ✅ Autofac DI 集成 - 统一程序集扫描依赖注入
-- 🔄 高级缓存策略优化 (Redis 集成)
-- 🔄 WebSearch 增强和扩展 (多提供商支持)
-- 🔄 带 MLflow 集成的模型微调工具完善
-- 🔄 性能基准测试和优化
-- 🔄 基于 YARP 的 API 网关增强
-- 🔄 实时协作功能
-
-### 第三阶段 计划中 🔮
-- 🔮 多语言支持 (中、英、日、韩)
-- 🔮 更多 LLM 集成 (Claude、Gemini、本地模型)
-- 🔮 带市场的社区插件系统
-- 🔮 桌面客户端 (基于 Electron)
-- 🔮 移动应用支持 (React Native)
-- 🔮 与 REST 并存的 GraphQL API 层
-- 🔮 高级分析仪表板
-- 🔮 企业 SSO 集成 (SAML/OIDC)
-
-### 第四阶段 未来愿景 🔭
-- 🔭 AI 驱动的代码生成助手
-- 🔭 具备自学习能力的自动化工作流优化
-- 🔭 支持租户隔离的多租户 SaaS 架构
-- 🔭 高级安全合规 (SOC 2、GDPR、ISO 27001)
-- 🔭 云原生无服务器部署选项 (AWS Lambda、Azure Functions)
-- 🔭 边缘计算支持，满足低延迟场景需求
-- 🔭 联邦学习集成，支持分布式模型训练
-- 🔭 自然语言到工作流的自动转换
-- 🔭 自主代理群体，用于复杂任务协调
-- 🔭 抗量子密码学实现
-
----
+仓库目前没有提供许可证文件。在仓库所有者补充许可证前，默认适用标准版权限制。

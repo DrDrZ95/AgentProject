@@ -57,9 +57,10 @@ public static class HangfireExtensions
         // Enable Hangfire Dashboard
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
-            // 可以在此处配置认证，例如只允许管理员访问
-            // Authentication can be configured here, e.g., restrict access to administrators
-            // Authorization = new [] { new HangfireAuthorizationFilter() }
+            Authorization = new IDashboardAuthorizationFilter[]
+            {
+                new AdministratorDashboardAuthorizationFilter()
+            }
         });
 
         // RAG 缓存预热任务 (RAG cache warmup job)
@@ -73,17 +74,17 @@ public static class HangfireExtensions
     }
 }
 
-// 示例：Hangfire Dashboard 授权过滤器
-// Example: Hangfire Dashboard Authorization Filter
-// public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
-// {
-//     public bool Authorize([NotNull] DashboardContext context)
-//     // {
-//         // 在此处添加您的认证逻辑
-//         // Add your authentication logic here
-//         // var httpContext = context.Get//HttpContext();
-//         // return httpContext.User.IsInRole("Admin");
-//         // return true;
-//     }
-// }
+/// <summary>
+/// Restricts the Hangfire dashboard to authenticated administrators.
+/// 仅允许已认证的管理员访问 Hangfire Dashboard。
+/// </summary>
+internal sealed class AdministratorDashboardAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context)
+    {
+        var httpContext = context.GetHttpContext();
+        return httpContext.User.Identity?.IsAuthenticated == true
+            && httpContext.User.IsInRole("Administrator");
+    }
+}
 

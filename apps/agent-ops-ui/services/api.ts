@@ -93,4 +93,4 @@ class ApiClient {
 }
 
 // 导出实例，baseURL 指向网关地址
-export const api = new ApiClient(process.env.API_URL || 'https://api.agentproject.io/v1');
+export const api = new ApiClient(import.meta.env.VITE_API_BASE_URL || 'https://api.agentproject.io/v1');

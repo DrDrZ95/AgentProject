@@ -153,8 +153,8 @@ public class SandboxSystemInfo
     public string HomeDirectory { get; set; } = string.Empty;
 
     /// <summary>
-    /// Environment variables
-    /// 环境变量
+    /// Environment variables explicitly safe to expose.
+    /// 可安全公开的环境变量。宿主进程环境变量不会通过 API 返回。
     /// </summary>
     public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
 }

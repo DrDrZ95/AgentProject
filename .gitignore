@@ -8,6 +8,7 @@ __pycache__/
 # Virtual Environment
 venv/
 ENV/
+.pnpm-store/
 
 # Model files (large files - consider Git LFS for these if you must commit them)
 models/*

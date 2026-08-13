@@ -2,20 +2,21 @@
   "name": "agentproject---mlops",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "pnpm@10.33.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.2.3",
     "recharts": "^3.5.1",
     "react-dom": "^19.2.3",
-    "@google/genai": "^1.33.0",
     "lucide-react": "^0.560.0",
     "clsx": "^2.1.0",
-    "axios": "1.6.7",
+    "axios": "^1.16.0",
     "jsrsasign": "11.1.0"
   },
   "devDependencies": {

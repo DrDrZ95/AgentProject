@@ -53,7 +53,6 @@ class AuthService {
   public async login(username: string, password: string): Promise<UserProfile> {
     // 1. 前端加密 (RSA Encryption)
     const encryptedPassword = encrypt(password);
-    console.log('[Auth] Password Encrypted:', encryptedPassword);
 
     // 2. 发送请求 (Mock Network Request)
     return new Promise((resolve, reject) => {

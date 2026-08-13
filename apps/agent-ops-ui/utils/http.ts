@@ -21,7 +21,7 @@ interface ApiResponse<T = any> {
 
 // 全局配置
 const config: AxiosRequestConfig = {
-  baseURL: process.env.API_URL || 'https://api.opsnexus.io/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.opsnexus.io/v1',
   timeout: 10000, // 10秒超时
   headers: {
     'Content-Type': 'application/json',
@@ -81,23 +81,27 @@ class Http {
   }
 
   // 通用 GET 方法
-  public get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.instance.get(url, config);
+  public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.get<T>(url, config);
+    return response as unknown as T;
   }
 
   // 通用 POST 方法
-  public post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.instance.post(url, data, config);
+  public async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.post<T>(url, data, config);
+    return response as unknown as T;
   }
 
   // 通用 PUT 方法
-  public put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.instance.put(url, data, config);
+  public async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.put<T>(url, data, config);
+    return response as unknown as T;
   }
 
   // 通用 DELETE 方法
-  public delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.instance.delete(url, config);
+  public async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.delete<T>(url, config);
+    return response as unknown as T;
   }
 }
 
