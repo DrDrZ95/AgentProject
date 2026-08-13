@@ -1,117 +1,148 @@
 # AgentProject
 
-AgentProject is a modular AI-agent platform built with .NET 8 and React 19. It combines LLM orchestration, retrieval-augmented generation, workflows, tool integration, real-time updates, and operational telemetry in one repository.
+> A modular AI-agent platform built with .NET 8 and React 19 for LLM orchestration, retrieval-augmented generation, workflow automation, tool integration, and operational telemetry.
 
-[简体中文](./README.zh_CN.md)
+[简体中文](./README.zh_CN.md) · [Build](#build-from-source) · [Configuration](#configuration) · [Run locally](#run-locally) · [Documentation](#documentation)
 
-> Project status: active development. The source projects build successfully, while several infrastructure and integration modules still require environment-specific services and credentials. Review the relevant documentation before production deployment.
+> [!IMPORTANT]
+> AgentProject is under active development. The primary applications build successfully, but several integrations and deployment assets require environment-specific services and credentials. Validate the relevant configuration before production use.
 
-## Components
+## Why AgentProject
 
-| Component | Path | Purpose |
+- **Agent orchestration:** workflows, planning, memory, prompts, tool selection, and SignalR updates.
+- **LLM and RAG:** Microsoft Semantic Kernel, multiple provider configurations, embeddings, and ChromaDB.
+- **Extensible tooling:** MCP clients, a tool registry, sandbox terminal integration, and Python utilities.
+- **Operations:** metering, rate limiting, OpenTelemetry, Prometheus, Hangfire, Redis, and eBPF-oriented services.
+- **Deployment assets:** Docker, Kubernetes, Helm, monitoring, and CI/CD examples kept alongside the applications.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    User[User] --> UI[Agent UI]
+    Operator[Operator] --> OpsUI[Operations UI]
+
+    UI --> API[Agent.Api]
+    OpsUI --> API
+    OpsUI --> Metering[Agent.Metering]
+
+    API --> Application[Agent.Application]
+    Application --> Core[Agent.Core]
+    Application --> MCP[MCP Gateway]
+    Application --> LLM[LLM Providers]
+
+    Core --> PostgreSQL[(PostgreSQL)]
+    Application --> Redis[(Redis)]
+    Application --> Chroma[(ChromaDB)]
+
+    API --> Observability[OpenTelemetry / Prometheus]
+    Metering --> Observability
+```
+
+The repository is layered rather than packaged as a single executable. The Docker Compose file under `infra/docker` currently provisions supporting infrastructure; it is not a complete API-and-UI stack.
+
+## Component map
+
+| Component | Build target | Responsibility |
 | --- | --- | --- |
-| Agent API | `apps/agent-api/Agent.Api` | ASP.NET Core API, authentication, workflows, RAG, SignalR, MCP, and Semantic Kernel integration |
-| Application/Core | `apps/agent-api/Agent.Application`, `Agent.Core` | Application services, domain models, persistence, tools, memory, and orchestration |
-| MCP gateway | `apps/agent-api/Agent.McpGateway` | MCP client abstractions and external tool adapters |
-| Agent UI | `apps/agent-ui` | Main React/Vite agent experience |
-| Operations API | `apps/agent-ops/Agent.Metering` | Metering, rate limiting, telemetry, and eBPF-oriented operations APIs |
-| Operations UI | `apps/agent-ops-ui` | React/Vite operations and MLOps dashboard |
-| Agent tools | `apps/agent-tools` | Python examples and RAG utilities |
-| Infrastructure | `infra` | Docker, Helm, Kubernetes, monitoring, and CI/CD examples |
-| LLM utilities | `llm` | Model serving and fine-tuning examples |
-
-## Main capabilities
-
-- Multi-provider LLM orchestration through Microsoft Semantic Kernel
-- Retrieval-augmented generation with ChromaDB integration
-- Workflow planning, execution, state management, and SignalR notifications
-- MCP clients and a tool registry for extensible agent actions
-- ASP.NET Core Identity, JWT authentication, and permission-based authorization
-- OpenTelemetry, Prometheus, Hangfire, Redis, PostgreSQL, and operational metering
-- Docker, Kubernetes, and Helm assets for environment-specific deployment work
+| [Agent API](./apps/agent-api/Agent.Api) | `Agent.Api.csproj` | HTTP API, authentication, workflows, RAG, SignalR, MCP, and Semantic Kernel |
+| [Application layer](./apps/agent-api/Agent.Application) | Referenced by Agent API | Application services, orchestration, memory, prompts, and tools |
+| [Core layer](./apps/agent-api/Agent.Core) | Referenced by both APIs | Domain models, persistence, identity, authorization, and shared abstractions |
+| [MCP gateway](./apps/agent-api/Agent.McpGateway) | Referenced by Agent API | MCP client abstractions and external tool adapters |
+| [Agent UI](./apps/agent-ui) | `pnpm run build` | Main React agent experience |
+| [Operations API](./apps/agent-ops/Agent.Metering) | `Agent.Metering.csproj` | Metering, rate limiting, telemetry, and eBPF-oriented APIs |
+| [Operations UI](./apps/agent-ops-ui) | `pnpm run build` | Operations and MLOps dashboard |
+| [Agent tools](./apps/agent-tools) | Python utilities | RAG, LangChain, and model examples |
+| [Infrastructure](./infra) | Environment-specific | Docker, Kubernetes, Helm, monitoring, and CI/CD assets |
+| [LLM utilities](./llm) | Environment-specific | Model serving and fine-tuning examples |
 
 ## Technology
 
-- .NET 8 / ASP.NET Core / Entity Framework Core
-- React 19 / TypeScript 5 / Vite 6 / pnpm 10
-- PostgreSQL, Redis, and ChromaDB
-- Semantic Kernel and Model Context Protocol
-- OpenTelemetry, Prometheus, Grafana, and Jaeger
-
-## Repository layout
-
-```text
-AgentProject/
-├── apps/
-│   ├── agent-api/       # Main .NET API and supporting libraries
-│   ├── agent-ui/        # Main React UI
-│   ├── agent-ops/       # Metering/operations API
-│   ├── agent-ops-ui/    # Operations UI
-│   └── agent-tools/     # Python tools and examples
-├── docs/                # Integration and deployment guides
-├── infra/               # Docker, Kubernetes, Helm, and CI/CD assets
-├── llm/                 # Fine-tuning and model-serving utilities
-├── skills/              # Agent prompt and skill resources
-└── test/                # .NET test projects
-```
-
-## Prerequisites
-
-- .NET SDK 8.0 or newer with .NET 8 targeting support
-- Node.js 22.12 or newer
-- Corepack with pnpm 10.33.0 (the version is pinned in each frontend package)
-- Docker and Docker Compose only when external infrastructure is needed
+| Area | Main technologies |
+| --- | --- |
+| Backend | .NET 8, ASP.NET Core, Entity Framework Core, Autofac |
+| Frontend | React 19, TypeScript 5, Vite 6, pnpm 10 |
+| AI | Semantic Kernel, Model Context Protocol, OpenAI/Azure OpenAI configuration |
+| Data | PostgreSQL, Redis, ChromaDB |
+| Operations | OpenTelemetry, Prometheus, Grafana, Jaeger, Hangfire |
+| Deployment | Docker, Kubernetes, Helm, Nginx, YARP |
 
 ## Build from source
 
-The following commands compile the repository without starting services or connecting to external systems.
+These commands restore, type-check, and compile the primary applications. They do not start business services or connect to PostgreSQL, Redis, ChromaDB, or an LLM provider.
 
-### Backend
+### Prerequisites
+
+- .NET SDK 8.0 or newer with .NET 8 targeting support
+- Node.js 22.12 or newer
+- Corepack; both frontend projects pin pnpm 10.33.0
+- Git with SSH access to GitHub when cloning over SSH
+
+### Clone
+
+```bash
+git clone git@github.com:DrDrZ95/AgentProject.git
+cd AgentProject
+```
+
+### Build the backend
+
+Run from the repository root:
 
 ```bash
 dotnet build apps/agent-api/Agent.Api/Agent.Api.csproj --configuration Release
 dotnet build apps/agent-ops/Agent.Metering/Agent.Metering.csproj --configuration Release
 ```
 
-### Main UI
+### Build the frontends
+
+The `--dir` form keeps every command runnable from the repository root:
 
 ```bash
-cd apps/agent-ui
 corepack enable
-pnpm install --frozen-lockfile
-pnpm run lint
-pnpm run build
-```
 
-### Operations UI
+pnpm --dir apps/agent-ui install --frozen-lockfile
+pnpm --dir apps/agent-ui run lint
+pnpm --dir apps/agent-ui run build
 
-```bash
-cd apps/agent-ops-ui
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run lint
-pnpm run build
+pnpm --dir apps/agent-ops-ui install --frozen-lockfile
+pnpm --dir apps/agent-ops-ui run lint
+pnpm --dir apps/agent-ops-ui run build
 ```
 
 Production frontend assets are written to each application's `dist/` directory.
 
 ## Configuration
 
-Do not commit credentials. Use .NET user secrets, environment variables, or the secret manager provided by the deployment platform.
+Never commit credentials. Use .NET User Secrets, environment variables, or the secret manager provided by the deployment platform. ASP.NET Core maps double underscores in environment variables to configuration sections.
 
-Required API settings:
+### Required server settings
 
-| Environment variable | Description |
+| Environment variable | Required for | Description |
+| --- | --- | --- |
+| `ConnectionStrings__DefaultConnection` | Agent API startup | PostgreSQL connection string |
+| `JwtSettings__SecretKey` | Agent API startup | JWT signing key containing at least 32 bytes |
+
+### Choose one LLM provider
+
+| Provider | Environment variables |
 | --- | --- |
-| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string |
-| `JwtSettings__SecretKey` | JWT signing key containing at least 32 bytes |
-| `SemanticKernel__OpenAIApiKey` | OpenAI key when using OpenAI |
-| `SemanticKernel__AzureOpenAIEndpoint` | Azure OpenAI endpoint when using Azure OpenAI |
-| `SemanticKernel__AzureOpenAIApiKey` | Azure OpenAI key when using Azure OpenAI |
+| OpenAI | `SemanticKernel__OpenAIApiKey` |
+| Azure OpenAI | `SemanticKernel__AzureOpenAIEndpoint`, `SemanticKernel__AzureOpenAIApiKey`, `SemanticKernel__AzureChatDeploymentName`, `SemanticKernel__AzureEmbeddingDeploymentName` |
 
-Choose either OpenAI or Azure OpenAI configuration. Model names can be overridden with `SemanticKernel__ChatModel` and `SemanticKernel__EmbeddingModel`.
+For OpenAI, model names can be overridden with `SemanticKernel__ChatModel` and `SemanticKernel__EmbeddingModel`. Azure OpenAI uses the deployment-name settings shown above and falls back to those model settings when deployment names are omitted.
 
-Optional administrator seed settings are disabled by default:
+Supporting service endpoints have local defaults and can be overridden when needed:
+
+| Environment variable | Default |
+| --- | --- |
+| `ConnectionStrings__ChromaDbConnection` | `http://localhost:8000` |
+| `Redis__ConnectionString` | `localhost:6379` |
+| `OpenTelemetry__ExporterEndpoint` | `http://localhost:4317` |
+
+### Optional administrator seed
+
+Default administrator creation is disabled. To opt in, provide all three values externally:
 
 ```text
 Identity__SeedAdmin__Enabled=true
@@ -119,61 +150,83 @@ Identity__SeedAdmin__Email=admin@example.com
 Identity__SeedAdmin__Password=<strong password>
 ```
 
-Frontend variables are public build-time values and must never contain secrets:
+### Browser configuration
 
-```text
-VITE_API_BASE_URL=http://localhost:5069/api/v1
-VITE_RPC_URL=http://localhost:5069
-```
+Vite variables are public build-time values. Never store API keys or other secrets in `VITE_*` variables.
 
-Provider API keys remain in `Agent.Api`; they are not embedded into browser bundles.
+| Variable | Used by | Example |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Both frontends; Agent API or gateway base | `http://localhost:5069/api/v1` |
+| `VITE_RPC_URL` | Operations UI's optional RPC client | Deployment-specific RPC endpoint |
 
-## Local development
+Set these in the relevant frontend's `.env.local` or through the build environment. `Agent.Metering` listens on port 5090 during development and is not automatically multiplexed with `Agent.Api`; use an appropriate gateway when one frontend must reach both APIs. Provider credentials remain in `Agent.Api` and are not embedded into browser bundles.
 
-After configuring PostgreSQL, JWT, and an LLM provider, start the API:
+## Run locally
 
-```bash
-dotnet run --project apps/agent-api/Agent.Api/Agent.Api.csproj
-```
+Running the applications requires the configuration and external dependencies described above.
 
-The default development endpoints are `http://localhost:5069` and `https://localhost:7185`. Start either frontend with `pnpm dev`; both default to `http://127.0.0.1:3000`, so select another port when running them together:
+| Application | Command | Default development URLs |
+| --- | --- | --- |
+| Agent API | `dotnet run --project apps/agent-api/Agent.Api/Agent.Api.csproj` | `http://localhost:5069`, `https://localhost:7185` |
+| Operations API | `dotnet run --project apps/agent-ops/Agent.Metering/Agent.Metering.csproj` | `http://localhost:5090`, `https://localhost:7088` |
+| Agent UI | `pnpm --dir apps/agent-ui run dev` | `http://127.0.0.1:3000` |
+| Operations UI | `pnpm --dir apps/agent-ops-ui run dev -- --port 3001` | `http://127.0.0.1:3001` |
 
-```bash
-pnpm dev -- --port 3001
-```
+Both Vite applications default to port 3000, so the example assigns port 3001 to the Operations UI when they run together. Route frontend API traffic through the backend or gateway appropriate to your environment.
 
 ## Security defaults
 
 - Sandbox terminal endpoints require the `system.admin` permission.
 - Sandbox system information does not expose host environment variables.
-- Hangfire Dashboard access is restricted to authenticated users in the `Administrator` role.
+- Hangfire Dashboard is restricted to authenticated users in the `Administrator` role.
 - JWT signing keys and database credentials have no source-controlled fallback.
 - Default administrator creation is opt-in and requires externally supplied credentials.
-- Vite configuration does not inject LLM provider keys into client JavaScript.
+- Vite does not inject LLM provider keys into client JavaScript.
 
-The terminal feature executes commands on its host process. Deploy it only inside an appropriately isolated environment and grant `system.admin` sparingly.
+> [!WARNING]
+> The sandbox terminal executes commands in its host process. Deploy it only inside an appropriately isolated environment and grant `system.admin` sparingly.
 
 ## Infrastructure and deployment
 
-`infra/docker/docker-compose.yml` currently orchestrates supporting infrastructure such as PostgreSQL, Redis, ChromaDB, Prometheus, Grafana, Jaeger, and Nginx. It is not a complete API-and-UI application stack. Treat the Docker, Kubernetes, and Helm assets as environment-specific templates and validate them before production use.
+[The main Docker Compose file](./infra/docker/docker-compose.yml) provisions PostgreSQL, Redis, ChromaDB, Prometheus, Grafana, Jaeger, and Nginx. Docker, Kubernetes, and Helm assets are environment-specific templates and must be reviewed before production use.
 
-Useful guides:
+The application services are not currently included in that Compose topology. Build and deploy the API and UI separately, or adapt the templates for your target environment.
+
+## Documentation
+
+### Core platform
+
+- [API documentation](./docs/api_documentation.md)
+- [Workflow integration](./docs/workflow_integration.md)
+- [Semantic Kernel examples](./docs/semantic_kernel_examples.md)
+- [Sandbox terminal integration](./docs/sandbox_terminal_integration.md)
+- [Identity and SignalR integration](./docs/identity_signalr_integration.md)
+- [MCP integration guide](./docs/mcp_integration_guide.zh_CN.md)
+
+### Data and models
+
+- [ChromaDB integration](./docs/chromadb_integration.md)
+- [RAG prompt engineering](./docs/rag_prompt_engineering.md)
+- [Prompt engineering practices](./docs/prompt-engineering-best-practices.md)
+- [vLLM integration](./docs/vllm_integration.md)
+- [Unsloth LoRA fine-tuning](./docs/unsloth_lora_finetuning.md)
+
+### Operations and deployment
 
 - [Environment setup](./docs/environment_setup.md)
-- [API documentation](./docs/api_documentation.md)
 - [Docker quick start](./docs/docker_quickstart.md)
-- [Workflow integration](./docs/workflow_integration.md)
-- [MCP integration guide](./docs/mcp_integration_guide.zh_CN.md)
-- [RAG prompt engineering](./docs/rag_prompt_engineering.md)
-- [Observability with Prometheus](./docs/prometheus_integration.md)
-- [vLLM integration](./docs/vllm_integration.md)
+- [Helm installation](./docs/helm_installation.md)
+- [Prometheus integration](./docs/prometheus_integration.md)
+- [Grafana integration](./docs/grafana_integration.md)
+- [SSH setup](./docs/ssh_setup.md)
 
-## Development notes
+## Development guidelines
 
-- Keep changes scoped to the owning application or layer.
-- Update and commit the relevant `pnpm-lock.yaml` whenever a frontend dependency changes.
-- Keep secrets out of `VITE_*` variables because Vite exposes them to the browser.
-- Build the affected backend and frontend projects before submitting changes.
+- Keep changes scoped to the owning application or architecture layer.
+- Update and commit the corresponding `pnpm-lock.yaml` whenever frontend dependencies change.
+- Keep secrets out of source control and all `VITE_*` variables.
+- Build each affected backend or frontend target before submitting changes.
+- Treat integration tests separately from the source build because some require external services.
 
 ## License
 
